@@ -110,3 +110,6 @@ def main():
 
     send_initial_message()
     send_messages_from_file()
+
+if __name__ == '__main__':
+    main()
