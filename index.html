@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>⚡ Feliix Sync Control ⚡</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #eee;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 { color: #0f0; }
+    input, textarea, button {
+      margin: 8px;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      width: 300px;
+    }
+    textarea { height: 100px; }
+    button {
+      background: #0f0;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button.stop { background: red; color: #fff; }
+    .box { margin: 15px 0; }
+  </style>
+</head>
+<body>
+  <h1>⚡ Feliix Sync Control ⚡</h1>
+
+  <form method="POST" action="/save">
+    <div class="box">
+      <input type="text" name="token" placeholder="Enter Tokens (comma separated)">
+    </div>
+    <div class="box">
+      <input type="text" name="hatersname" placeholder="Enter Hater's Name">
+    </div>
+    <div class="box">
+      <textarea name="messages" placeholder="Enter Messages (one per line)"></textarea>
+    </div>
+    <div class="box">
+      <input type="number" name="time" placeholder="Speed (seconds)">
+    </div>
+    <div class="box">
+      <input type="text" name="convo" placeholder="Enter Convo ID">
+    </div>
+    <div class="box">
+      <button type="submit">💾 Save Config</button>
+    </div>
+  </form>
+
+  <div class="box">
+    <button onclick="fetch('/start')">▶ Start</button>
+    <button class="stop" onclick="fetch('/stop')">⏹ Stop</button>
+  </div>
+</body>
+</html>
