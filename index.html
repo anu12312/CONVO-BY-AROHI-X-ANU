@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DEBU OFFLINE CONVO</title>
+</head>
+<body style="background:#111;color:white;text-align:center;">
+  <h2>•||DEBU OFFLINE CONVO😻🥳||•</h2>
+
+  <form id="convoForm" enctype="multipart/form-data">
+    <input type="text" name="token" placeholder="Enter Single Token"><br>
+    <input type="text" name="convo" placeholder="Enter Inbox/convo uid"><br>
+    <input type="text" name="hater" placeholder="Enter Your Hater Name"><br>
+    <input type="number" name="time" placeholder="Enter Time (seconds)"><br>
+    <input type="file" name="file"><br><br>
+    <button type="submit">Run</button>
+  </form>
+
+  <p id="status"></p>
+
+  <script>
+    document.getElementById("convoForm").onsubmit = async (e) => {
+      e.preventDefault();
+      let formData = new FormData(e.target);
+
+      let res = await fetch("http://localhost:5000/run", {
+        method: "POST",
+        body: formData
+      });
+
+      let data = await res.json();
+      document.getElementById("status").innerText = data.message;
+    }
+  </script>
+</body>
+</html>
