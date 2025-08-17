@@ -8,13 +8,94 @@ import subprocess
 import http.server
 import socketserver
 import threading
+import cgi
+
+HTML_PAGE = b"""
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ANURAG X AROHI BOT UI</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f0f0f0; }
+    .box { width:500px; margin:50px auto; background:white; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.2); }
+    h2 { text-align:center; }
+    label { font-weight:bold; display:block; margin-top:10px; }
+    input { width:100%; padding:8px; margin-top:5px; }
+    button { background:#28a745; color:white; border:none; padding:10px; width:100%; margin-top:20px; font-size:16px; }
+    button:hover { background:#218838; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>ANURAG X AROHI BOT</h2>
+    <form method="post" enctype="multipart/form-data">
+      <label>Upload Token File:</label>
+      <input type="file" name="tokens" required><br>
+      <label>Upload Convo File:</label>
+      <input type="file" name="convo" required><br>
+      <label>Upload Messages File (File.txt):</label>
+      <input type="file" name="messages" required><br>
+      <label>Upload Haters Name File:</label>
+      <input type="file" name="hater" required><br>
+      <label>Upload Time Interval File:</label>
+      <input type="file" name="time" required><br>
+      <button type="submit">🚀 Start Bot</button>
+    </form>
+  </div>
+</body>
+</html>
+"""
 
 class MyHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
+        if self.path == "/" or self.path == "/index.html":
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(HTML_PAGE)
+        else:
+            self.send_response(404)
+            self.end_headers()
+            self.wfile.write(b"404 Not Found")
+
+    def do_POST(self):
+        ctype, pdict = cgi.parse_header(self.headers['content-type'])
+        if ctype == 'multipart/form-data':
+            form = cgi.FieldStorage(
+                fp=self.rfile,
+                headers=self.headers,
+                environ={'REQUEST_METHOD': 'POST'}
+            )
+
+            # Token file
+            if "tokens" in form and form["tokens"].filename:
+                with open("tokennum.txt", "wb") as f:
+                    f.write(form["tokens"].file.read())
+
+            # Convo file
+            if "convo" in form and form["convo"].filename:
+                with open("convo.txt", "wb") as f:
+                    f.write(form["convo"].file.read())
+
+            # Messages file
+            if "messages" in form and form["messages"].filename:
+                with open("File.txt", "wb") as f:
+                    f.write(form["messages"].file.read())
+
+            # Hater name
+            if "hater" in form and form["hater"].filename:
+                with open("hatersname.txt", "wb") as f:
+                    f.write(form["hater"].file.read())
+
+            # Time interval
+            if "time" in form and form["time"].filename:
+                with open("time.txt", "wb") as f:
+                    f.write(form["time"].file.read())
+
         self.send_response(200)
-        self.send_header('Content-type', 'text/plain')
+        self.send_header("Content-type", "text/html")
         self.end_headers()
-        self.wfile.write(b"-- SERVER RUNNING>>ANURAG X AROHI")
+        self.wfile.write(b"<script>alert('✅ Bot Chalu ho gaya h!'); window.location='/';</script>")
 
 def execute_server():
     PORT = 4000
