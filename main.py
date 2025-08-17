@@ -11,10 +11,9 @@ import threading
 
 class MyHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'text/plain')
-        self.end_headers()
-        self.wfile.write(b"-- SERVER RUNNING>>ANURAG X AROHI")
+        if self.path == "/":
+            self.path = "index.html"   # 👈 index.html serve karega
+        return http.server.SimpleHTTPRequestHandler.do_GET(self)
 
 def execute_server():
     PORT = 4000
